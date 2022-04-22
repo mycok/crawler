@@ -14,27 +14,27 @@ func TestRun(t *testing.T) {
 		{
 			name:     "NoFilter",
 			cfg:      config{root: "testdata", ext: "", list: true, size: 0},
-			expected: "testdata/dir.log\ntestdata/dir2/script.sh\n",
+			expected: "testdata/dir.log\ntestdata/dir2/script.sh\n\n2 files found\n",
 		},
 		{
 			name:     "FilterExtensionMatch",
 			cfg:      config{root: "testdata", ext: ".log", list: true, size: 0},
-			expected: "testdata/dir.log\n",
+			expected: "testdata/dir.log\n\n1 file found\n",
 		},
 		{
 			name:     "FilterExtensionAndSizeMatch",
 			cfg:      config{root: "testdata", ext: ".log", list: true, size: 10},
-			expected: "testdata/dir.log\n",
+			expected: "testdata/dir.log\n\n1 file found\n",
 		},
 		{
 			name:     "FilterExtensionButNoSizeMatch",
 			cfg:      config{root: "testdata", ext: ".log", list: true, size: 20},
-			expected: "",
+			expected: "\n0 files found\n",
 		},
 		{
 			name:     "FilterExtensionWithNoMatch",
 			cfg:      config{root: "testdata", ext: ".tar", list: true, size: 0},
-			expected: "",
+			expected: "\n0 files found\n",
 		},
 	}
 
