@@ -26,16 +26,31 @@ func listFile(path string, counter *int64, out io.Writer) error {
 	return err
 }
 
-func displayMatchedCount(counter int64, out io.Writer) {
+func delFile(path string, counter *int64, out io.Writer) error {
+	*counter++
+
+	fmt.Fprint(out, "x")
+
+	return os.Remove(path)
+}
+
+func displayMatchedCount(counter int64, cfg config, out io.Writer) {
 	var str string
+
+	subStr := "found"
 
 	fmt.Fprintln(out)
 
 	if counter == 1 {
-		str = "%d file found"
+		str = "%d file %s"
 	} else {
-		str = "%d files found"
+		str = "%d files %s"
 	}
 
-	fmt.Fprintln(out, fmt.Sprintf(str, counter))
+	if cfg.del {
+		subStr = "deleted"
+	}
+
+
+	fmt.Fprintln(out, fmt.Sprintf(str, counter, subStr))
 }

@@ -3,6 +3,9 @@ package main
 import (
 	"bytes"
 	"testing"
+	"os"
+	"fmt"
+	"path/filepath"
 )
 
 func TestRun(t *testing.T) {
@@ -49,8 +52,105 @@ func TestRun(t *testing.T) {
 			output := buffer.String()
 
 			if tc.expected != output {
-				t.Errorf("Expected: %q, Got: %q", tc.expected, output)
+				t.Errorf("Expected: %q, Got: %q instead", tc.expected, output)
 			}
 		})
 	}
+}
+
+func TestDeleteFile(t *testing.T) {
+	testcases := []struct {
+		name string
+		cfg *config
+		extNoDelete string
+		nDelete int
+		nNoDelete int
+		expected string
+	}{
+		{
+			name:        "DeleteWithNoExtMatch",
+			cfg:         &config{ ext: ".log", del: true },
+			extNoDelete: ".gz",
+			nDelete:     0,
+			nNoDelete:   10,
+			expected:    "0 files deleted",
+		},
+		{
+			name:        "DeleteWithExtMatch",
+			cfg:         &config{ ext: ".log", del: true },
+			extNoDelete: "",
+			nDelete:     10,
+			nNoDelete:   0,
+			expected:    "\nXXXXXXXXXX\n10 files deleted",
+		},
+		{
+			name:        "DeleteWithExtMixedUp",
+			cfg:         &config{ ext: ".log", del: true },
+			extNoDelete: ".gz",
+			nDelete:     5,
+			nNoDelete:   5,
+			expected:    "\nXXXXX\n5 files deleted",
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			var buffer bytes.Buffer
+
+			tempDirName := createTempDir(t, map[string]int{
+				tc.cfg.ext: tc.nDelete,
+				tc.extNoDelete: tc.nNoDelete,
+			})
+
+			defer t.Cleanup(func() {
+				os.RemoveAll(tempDirName)
+			})
+
+			tc.cfg.root = tempDirName
+
+			if err := run(&buffer, *tc.cfg); err != nil {
+				t.Fatal(err)
+			}
+
+			output := buffer.String()
+
+			if tc.expected != output {
+				t.Errorf("Expected: %q, Got: %q instead", tc.expected, output)
+			}
+
+			filesNotDeleted, err := os.ReadDir(tempDirName)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if len(filesNotDeleted) != tc.nNoDelete {
+				t.Errorf("Expected: %d files not deleted, Got: %q instead", tc.nNoDelete, len(filesNotDeleted))
+			}
+		})
+	}
+}
+
+func createTempDir(t *testing.T, files map[string]int) (dirName string) {
+	// Mark this fn as a test helper by calling t.Helper method.
+	t.Helper()
+
+	tempDir, err := os.CreateTemp("", "walktest")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tempDirName := tempDir.Name()
+
+	for k, n := range files {
+		for j := 1; j <= n; j++ {
+			fname := fmt.Sprintf("file%d%s", j, k)
+			fpath := filepath.Join(tempDirName, fname)
+
+			if err := os.WriteFile(fpath, []byte("dummy"), 0644); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	return tempDirName
 }

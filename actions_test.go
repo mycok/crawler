@@ -22,14 +22,14 @@ func TesTFilterOut(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			info, err := os.Stat(tc.file)
+			fileInfo, err := os.Stat(tc.file)
 			if err != nil {
 				t.Fatal()
 			}
 
-			f := filterOut(tc.file, tc.ext, tc.minSize, info)
-			if f != tc.expected {
-				t.Errorf("Expected: %t', got: '%t' instead\n", tc.expected, f)
+			filteredOut := filterOut(tc.file, tc.ext, tc.minSize, fileInfo)
+			if filteredOut != tc.expected {
+				t.Errorf("Expected: %t', got: '%t' instead\n", tc.expected, filteredOut)
 			}
 		})
 	}

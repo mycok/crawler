@@ -13,6 +13,7 @@ type config struct {
 	ext  string
 	list bool
 	size int64
+	del bool
 }
 
 func main() {
@@ -20,6 +21,7 @@ func main() {
 
 	flag.StringVar(&cfg.root, "r", ".", "Root directory to start search")
 	flag.StringVar(&cfg.ext, "e", "", "File extension to filter out")
+	flag.BoolVar(&cfg.del, "d", false, "File name / path to delete")
 	flag.BoolVar(&cfg.list, "l", false, "List all files only")
 	flag.Int64Var(&cfg.size, "s", 0, "Minimum file size in bytes")
 	flag.Parse()
@@ -49,11 +51,16 @@ func run(out io.Writer, cfg config) error {
 			return listFile(path, &counter, out)
 		}
 
+		// Delete matched files.
+		if cfg.del {
+			return delFile(path, &counter, out)
+		}
+
 		// List is the default option if nothing else was set.
 		return listFile(path, &counter, out)
 	})
 
-	displayMatchedCount(counter, out)
+	displayMatchedCount(counter, cfg, out)
 
 	return err
 }
