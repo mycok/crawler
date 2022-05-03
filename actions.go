@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -26,31 +27,30 @@ func listFile(path string, counter *int64, out io.Writer) error {
 	return err
 }
 
-func delFile(path string, counter *int64, out io.Writer) error {
+func delFile(path string, counter *int64, delLogger *log.Logger) error {
 	*counter++
-
-	fmt.Fprint(out, "x")
+	// Write to provided logger.
+	delLogger.Println(path)
 
 	return os.Remove(path)
 }
 
 func displayMatchedCount(counter int64, cfg config, out io.Writer) {
-	var str string
+	var mainStr string
 
 	subStr := "found"
 
 	fmt.Fprintln(out)
 
 	if counter == 1 {
-		str = "%d file %s"
+		mainStr = "%d file %s"
 	} else {
-		str = "%d files %s"
+		mainStr = "%d files %s"
 	}
 
 	if cfg.del {
 		subStr = "deleted"
 	}
 
-
-	fmt.Fprintln(out, fmt.Sprintf(str, counter, subStr))
+	fmt.Fprintln(out, fmt.Sprintf(mainStr, counter, subStr))
 }

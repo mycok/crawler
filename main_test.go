@@ -2,10 +2,10 @@ package main
 
 import (
 	"bytes"
-	"testing"
-	"os"
 	"fmt"
+	"os"
 	"path/filepath"
+	"testing"
 )
 
 func TestRun(t *testing.T) {
@@ -60,16 +60,16 @@ func TestRun(t *testing.T) {
 
 func TestDeleteFile(t *testing.T) {
 	testcases := []struct {
-		name string
-		cfg *config
+		name        string
+		cfg         *config
 		extNoDelete string
-		nDelete int
-		nNoDelete int
-		expected string
+		nDelete     int
+		nNoDelete   int
+		expected    string
 	}{
 		{
 			name:        "DeleteWithNoExtMatch",
-			cfg:         &config{ ext: ".log", del: true },
+			cfg:         &config{ext: ".log", del: true},
 			extNoDelete: ".gz",
 			nDelete:     0,
 			nNoDelete:   10,
@@ -77,7 +77,7 @@ func TestDeleteFile(t *testing.T) {
 		},
 		{
 			name:        "DeleteWithExtMatch",
-			cfg:         &config{ ext: ".log", del: true },
+			cfg:         &config{ext: ".log", del: true},
 			extNoDelete: "",
 			nDelete:     10,
 			nNoDelete:   0,
@@ -85,7 +85,7 @@ func TestDeleteFile(t *testing.T) {
 		},
 		{
 			name:        "DeleteWithExtMixedUp",
-			cfg:         &config{ ext: ".log", del: true },
+			cfg:         &config{ext: ".log", del: true},
 			extNoDelete: ".gz",
 			nDelete:     5,
 			nNoDelete:   5,
@@ -95,10 +95,13 @@ func TestDeleteFile(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			var buffer bytes.Buffer
+			var (
+				buffer    bytes.Buffer
+				logBuffer bytes.Buffer
+			)
 
 			tempDirName := createTempDir(t, map[string]int{
-				tc.cfg.ext: tc.nDelete,
+				tc.cfg.ext:     tc.nDelete,
 				tc.extNoDelete: tc.nNoDelete,
 			})
 
@@ -107,6 +110,7 @@ func TestDeleteFile(t *testing.T) {
 			})
 
 			tc.cfg.root = tempDirName
+			tc.cfg.logger = &logBuffer
 
 			if err := run(&buffer, *tc.cfg); err != nil {
 				t.Fatal(err)
@@ -125,6 +129,12 @@ func TestDeleteFile(t *testing.T) {
 
 			if len(filesNotDeleted) != tc.nNoDelete {
 				t.Errorf("Expected: %d files not deleted, Got: %q instead", tc.nNoDelete, len(filesNotDeleted))
+			}
+
+			expLogLines := tc.nDelete + 1
+			lines := bytes.Split(logBuffer.Bytes(), []byte("\n"))
+			if len(lines) != expLogLines {
+				t.Errorf("Expected %d log lines, Got: %d lines instead", expLogLines, len(lines))
 			}
 		})
 	}
