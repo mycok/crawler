@@ -17,6 +17,7 @@ type config struct {
 	del     bool
 	logfile string
 	logger  io.Writer
+	archive string
 }
 
 func main() {
@@ -26,12 +27,13 @@ func main() {
 		f   = os.Stdout
 	)
 
-	flag.StringVar(&cfg.root, "r", ".", "Root directory to start search")
-	flag.StringVar(&cfg.ext, "e", "", "File extension to filter out")
-	flag.StringVar(&cfg.logfile, "log", "", "Log all file deletions to this file")
-	flag.BoolVar(&cfg.del, "d", false, "File name / path to delete")
-	flag.BoolVar(&cfg.list, "l", false, "List all files only")
-	flag.Int64Var(&cfg.size, "s", 0, "Minimum file size in bytes")
+	flag.StringVar(&cfg.root, "root", ".", "Root directory to start search")
+	flag.StringVar(&cfg.ext, "ext", "", "File extension to filter out")
+	flag.StringVar(&cfg.logfile, "log", "", "Filename to log all file deletions to")
+	flag.StringVar(&cfg.archive, "archive", "", "Archive directory")
+	flag.BoolVar(&cfg.del, "del", false, "Delete all files from the provided root directory")
+	flag.BoolVar(&cfg.list, "ls", false, "List all files only")
+	flag.Int64Var(&cfg.size, "size", 0, "Minimum file size in bytes")
 	flag.Parse()
 
 	if cfg.logfile != "" {
@@ -72,6 +74,14 @@ func run(out io.Writer, cfg config) error {
 		// If -l / list was explicitly set, don't do anything else.
 		if cfg.list {
 			return listFile(path, &counter, out)
+		}
+
+		// Archive file / path to a specified archive directory and if successful continue to
+		// other actions such delete if specified. Only return in case of an error.
+		if cfg.archive != "" {
+			if err := archiveFile(path, cfg.root, cfg.archive); err != nil {
+				return err
+			}
 		}
 
 		// Delete matched files.
